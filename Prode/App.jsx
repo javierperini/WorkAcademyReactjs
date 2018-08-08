@@ -1,5 +1,5 @@
 import React from 'react';
-
+import partidos from './partidos.json';
 
 class Goles extends React.Component {
 	constructor(props) {
@@ -36,8 +36,17 @@ class Partido extends React.Component {
 	render() {
 		return (
 		 <div>
-			<Equipo name='Local'/>
-			<Equipo name='Visitante'/>
+			{
+			partidos.map(function(partido){
+				return(
+                 <div>				
+					<Equipo name={partido.LocalName}/>
+				       <Equipo name={partido.VisitanteName}/>
+			    </div>
+			    );
+					   
+			}) 
+			}
 		 </div>
 		 )
 	}
