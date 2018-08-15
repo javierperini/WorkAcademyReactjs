@@ -22,8 +22,13 @@ class Equipo extends React.Component {
 
 	render() {
 		return (
-		<div> 
-		{this.name} <Goles/> 
+		<div className='row'>
+		  <div className='col-md-6'>
+			{this.name}
+		  </div>		
+		  <div className='col-md-6'>
+			<Goles/> 
+		  </div>
 		</div>);
 	}
 }
@@ -39,9 +44,13 @@ class Partido extends React.Component {
 			{
 			partidos.map(function(partido){
 				return(
-                 <div>				
-					<Equipo name={partido.LocalName}/>
-				       <Equipo name={partido.VisitanteName}/>
+                 <div className='row alert alert-dark form-group'>
+                    <div className='col-md-6'> 				 
+						<Equipo name={partido.home_team_country}/>
+					</div>
+					<div className='col-md-6'> 				 
+				       <Equipo name={partido.away_team_country}/>
+					</div>
 			    </div>
 			    );
 					   
@@ -58,7 +67,7 @@ class Fixture extends React.Component {
 	}
 	// Lista de partidos
 	render() {
-		return( <div> <Partido/> </div>)
+		return( <div className='container'> <Partido/> </div>)
 	}
 }
 
