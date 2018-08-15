@@ -5,11 +5,16 @@ class Goles extends React.Component {
 	constructor(props) {
 		super(props);
 		this.goles = 0;
+		this.setGoles = props.setGoles;
 	}
-	// Lista de partidos
+	
+	onChange(goles) {
+	  this.setGoles(goles); 	
+	}
+	
 	render() {   
 	  return (
-	  <div> {this.goles} </div>
+	  <input type='number' className='form-control' onChange={this.onChange.bind(this)} value={this.goles}/>
 	  )
 	}
 }
@@ -18,6 +23,13 @@ class Equipo extends React.Component {
 	constructor(props) {
 		super(props);
 		this.name = props.name;
+		this.goles[this.name] = 0;
+		this.setGolesEquipo = props.setGolesEquipo;
+	}
+	
+	setGoles(goles) {
+		this.goles[this.name] = goles; 
+		this.setGolesEquipo(this.goles)
 	}
 
 	render() {
@@ -27,7 +39,7 @@ class Equipo extends React.Component {
 			{this.name}
 		  </div>		
 		  <div className='col-md-6'>
-			<Goles/> 
+			<Goles setGoles={this.setGoles}/> 
 		  </div>
 		</div>);
 	}
@@ -36,26 +48,33 @@ class Equipo extends React.Component {
 class Partido extends React.Component {
 	constructor(props) {
 		super(props);
+		this.saveResult = props.saveResult;
+		this.partido = props.partido;
+		this.complete = false;
+		this.key = getKey(partido);
+		this.result[this.key] = { } 
 	}
-	// Lista de partidos
+	
+	getKey(partido) {
+		return  "" + partido.home_team_country + "-" + partido.away_team_country
+	}
+	
+	setGolesEquipo(equipo){
+		result = this.result[this.key]
+		this.result[this.key] = Object.assign(equipo, result) 
+	}
+	
 	render() {
 		return (
-		 <div>
-			{
-			partidos.map(function(partido){
-				return(
-                 <div className='row alert alert-dark form-group'>
-                    <div className='col-md-6'> 				 
-						<Equipo name={partido.home_team_country}/>
-					</div>
-					<div className='col-md-6'> 				 
-				       <Equipo name={partido.away_team_country}/>
-					</div>
-			    </div>
-			    );
-					   
-			}) 
-			}
+		 <div>			
+			 <div className='row alert alert-dark form-group'>
+				<div className='col-md-6'> 				 
+					<Equipo setGolesEquipo={this.setGolesEquipo} name={this.partido.home_team_country}/>
+				</div>
+				<div className='col-md-6'> 				 
+				   <Equipo setGolesEquipo={this.setGolesEquipo} name={this.partido.away_team_country}/>
+				</div>
+			</div>
 		 </div>
 		 )
 	}
@@ -64,22 +83,31 @@ class Partido extends React.Component {
 class Fixture extends React.Component {
 	constructor(props) {
 		super(props);
+		this.saveResult = props.saveResult;
 	}
 	// Lista de partidos
 	render() {
-		return( <div className='container'> <Partido/> </div>)
+		return( 
+		<div className='container'>
+		  { partidos.map(function(partido){ return(<Partido saveResult={this.saveResult} partido={partido}/> );}) }
+		</div>)
 	}
 }
 
 class Prode extends React.Component {
   constructor(props) {
     super(props);
+	this.results = [];
+  }
+  
+  onChange(partido) {
+	this.results.push(partido);
   }
   
   render() {   
     return (
       <div className="game">        
-		  <Fixture/>
+		  <Fixture saveResult={this.onChange}/ >
       </div>
     )
   }
