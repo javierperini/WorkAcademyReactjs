@@ -13,3 +13,18 @@
 export function getKey(partido) {
 	return  "" + partido.home_team_country + "-" + partido.away_team_country
 }
+
+export function formattedEquipo(equipo) {
+	var team = {};
+	team[equipo.country] = equipo.goals;
+	return team;
+}
+	
+export function formattedPartido(partido) {
+  var key = getKey(partido);
+  var formatedPartido = {};
+  var awayTeam = formattedEquipo(partido.away_team);
+  var homeTeam = formattedEquipo(partido.home_team);
+  formatedPartido[key] = _.extend(awayTeam, homeTeam);
+  return formatedPartido;
+}

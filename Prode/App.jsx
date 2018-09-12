@@ -113,30 +113,14 @@ class Fixture extends React.Component {
 		this.saveResult(partido)
 	}
 	
-	formattedEquipo(equipo) {
-	  const team = {};
-	  team[equipo.country] = equipo.goals;
-	  return team;
-	}
-	
-	formattedPartido(partido) {
-	  const key = utils.getKey(partido);
-      const formatedPartido = {};
-	  const awayTeam = this.formattedEquipo(partido.away_team);
-	  const homeTeam = this.formattedEquipo(partido.home_team);
-      formatedPartido[key] = Object.assign(awayTeam,  homeTeam);
-	  return formatedPartido;
-	}
-	
 	createPartido(partido) {
-		const formattedPartido = this.formattedPartido(partido);
+		const formattedPartido = utils.formattedPartido(partido);
 		this.realResult(formattedPartido);
 		return(<Partido saveResult={(partido) => this.saveResultFixture(partido)} partido={partido}/> )
 	}
 	
 	toggleModal() {
 		this.setState({ mostrarResultados: !this.state.mostrarResultados }); 
-		console.log('llego aca');
 	}
 	
 	compararyMotrasResultados() {
@@ -166,7 +150,6 @@ class Prode extends React.Component {
     super(props);
 	this.results = {};
 	this.realResults = {};
-	this.puntos = null;
   }
   
   saveResult(partido) {
@@ -181,27 +164,24 @@ class Prode extends React.Component {
 	this.realResults = Object.assign(this.realResults,  partido);
   }
   
+  acerteElResultadoDelPartido(currentResult, realResult) {
+	return _.every(currentResult, function(currentGoles, equipoKey) {
+		 var realGoles = realResult[equipoKey];
+		 return realGoles == currentGoles;
+	 });
+  }
+  
   compararResultados() {
 	const realResults = this.realResults;
 	const currentResults = this.results;
-	var count = 0;
-	Object.keys(currentResults).map(function(objectKey, index) {
-		const currentResult = currentResults[objectKey];
-		const realResult = realResults[objectKey];
-		var lePegueALosDos = 0;
-		Object.keys(currentResult).map(function(equipoKey, _) {
-			var currentGoles = currentResult[equipoKey];
-			var realGoles = realResult[equipoKey];
-
-			if( realGoles == currentGoles) {
-				lePegueALosDos++;
-			};
-		});
-		if(lePegueALosDos == 2){
-			count++ ;
-		};
-	});
-	return count;
+	const acerte = this.acerteElResultadoDelPartido;
+	
+	return _.reduce(currentResults, function(memo, currentResult, resultKey) {
+		const realResult = realResults[resultKey];
+		if(acerte(currentResult, realResult))
+		   memo++;
+		return memo
+	}, 0);
   }
  
   render() {	  
