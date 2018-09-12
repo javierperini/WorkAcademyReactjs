@@ -1,21 +1,7 @@
 import React from 'react';
 import partidos from './partidos.json';
-// Cantidad de propiedades esto va en un utils
- function countProperties(obj) {
-    var count = 0;
-
-    for (var property in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, property)) {
-            count++;
-        }
-    }
-
-    return count;
-}
-
-function getKey(partido) {
-	return  "" + partido.home_team_country + "-" + partido.away_team_country
-}
+import Modal from './Modal.jsx';
+import * as utils from './utils.jsx';
 
 
 class Goles extends React.Component {
@@ -66,7 +52,7 @@ class Partido extends React.Component {
 	constructor(props) {
 		super(props);
 		this.partido = props.partido;
-		this.key = getKey(this.partido);
+		this.key = utils.getKey(this.partido);
 		this.result = {};
 		this.result[this.key] = {};
 		this.saveResult = props.saveResult;
@@ -76,7 +62,7 @@ class Partido extends React.Component {
 	setGolesEquipo(equipo) {
 		const result = this.result[this.key];
 		this.result[this.key] = Object.assign(result, equipo);
-		if (countProperties(this.result[this.key]) == 2) {
+		if (utils.countProperties(this.result[this.key]) == 2) {
 			this.saveResult(this.result);
 		}	
 	}
@@ -97,6 +83,21 @@ class Partido extends React.Component {
 	}
 }
 
+class Results extends React.Component {
+	constructor(props) {
+		super(props);
+		this.misPuntos = props.misPuntos;
+	}
+	
+	render () {
+		return (
+			<div className="alert alert-secondary alert-warning" role="alert">
+				Le pegue a {this.misPuntos}
+			</div>
+		)
+	}
+}
+
 class Fixture extends React.Component {
 	constructor(props) {
 		super(props);
@@ -104,6 +105,8 @@ class Fixture extends React.Component {
 		this.countCompletedPartidos = 0;
 		this.realResult = props.realResult;
 		this.compararResultados = props.compararResultados;
+		this.misPuntos = null;
+		this.state = { mostrarResultados: false }
 	}
 	
 	saveResultFixture(partido) {
@@ -117,7 +120,7 @@ class Fixture extends React.Component {
 	}
 	
 	formattedPartido(partido) {
-	  const key = getKey(partido);
+	  const key = utils.getKey(partido);
       const formatedPartido = {};
 	  const awayTeam = this.formattedEquipo(partido.away_team);
 	  const homeTeam = this.formattedEquipo(partido.home_team);
@@ -131,14 +134,28 @@ class Fixture extends React.Component {
 		return(<Partido saveResult={(partido) => this.saveResultFixture(partido)} partido={partido}/> )
 	}
 	
-
+	toggleModal() {
+		this.setState({ mostrarResultados: !this.state.mostrarResultados }); 
+		console.log('llego aca');
+	}
+	
+	compararyMotrasResultados() {
+		this.misPuntos = this.compararResultados();
+		this.toggleModal();
+	}
+	
 	render() {
 		return( 
 			<div className='container'>
 			  {
 			  partidos.map((partido) => this.createPartido(partido)) 
 			  }
-			  <button className='btn  btn-darnger' onClick={() => this.compararResultados() }> Guardar </button>
+			  <div className='form-group'>
+				<button className='btn btn-danger btn-block' onClick={() => this.compararyMotrasResultados() }> Guardar </button>
+			  </div>
+			  <Modal show={this.state.mostrarResultados} onClose={() => this.toggleModal() }>
+				<Results misPuntos={this.misPuntos}/>
+			  </Modal>
 			</div>
 			)
 	}
@@ -149,17 +166,15 @@ class Prode extends React.Component {
     super(props);
 	this.results = {};
 	this.realResults = {};
+	this.puntos = null;
   }
   
   saveResult(partido) {
 	this.results = Object.assign(this.results,  partido);
-	console.log('termine');
-	console.log(this.results);
-	console.log(this.realResults);
   }
   
   countResult() {
-	countProperties(this.results);
+	utils.countProperties(this.results);
   }
   
   realResult(partido) {
@@ -177,18 +192,19 @@ class Prode extends React.Component {
 		Object.keys(currentResult).map(function(equipoKey, _) {
 			var currentGoles = currentResult[equipoKey];
 			var realGoles = realResult[equipoKey];
+
 			if( realGoles == currentGoles) {
 				lePegueALosDos++;
 			};
 		});
-		if(lePegueALosDos = 2){
+		if(lePegueALosDos == 2){
 			count++ ;
 		};
 	});
-	console.log(count);
+	return count;
   }
-  
-  render() {   
+ 
+  render() {	  
     return (
       <div className="game">        
 		  <Fixture saveResult={(partido) => this.saveResult(partido)} 
