@@ -38,13 +38,30 @@ class Equipo extends React.Component {
 	render() {
 		return (
 		<div className='row'>
-		  <div className='col-md-6'>
+		  <div className='col-md-6 d-flex align-items-center'>
 			{this.name}
 		  </div>		
-		  <div className='col-md-6'>
+		  <div className='col-md-6 d-flex align-items-center'>
 			<Goles setGoles={(goles)=> this.setGoles(goles) }/> 
 		  </div>
 		</div>);
+	}
+}
+
+class MatchInfo extends React.Component {
+	constructor(props) {
+		super(props);
+		this.partido = props.partido;
+	}
+	
+	render(){
+		return(
+		 <div>
+          	<p> {this.partido.location}
+			 {this.partido.stage_name}
+			{this.partido.datetime}</p>
+		 </div>
+	 )
 	}
 }
 
@@ -61,7 +78,7 @@ class Partido extends React.Component {
 	
 	setGolesEquipo(equipo) {
 		const result = this.result[this.key];
-		this.result[this.key] = Object.assign(result, equipo);
+		this.result[this.key] = _.extend(result, equipo);
 		if (utils.countProperties(this.result[this.key]) == 2) {
 			this.saveResult(this.result);
 		}	
@@ -71,10 +88,13 @@ class Partido extends React.Component {
 		return (
 		 <div>			
 			 <div className='row alert alert-dark form-group'>
-				<div className='col-md-6'> 				 
+				<div className='col-md-4'> 				 
 					<Equipo setGolesEquipo={(equipo) => this.setGolesEquipo(equipo)} name={this.partido.home_team_country}/>
 				</div>
-				<div className='col-md-6'> 				 
+				<div className='col-md-4'> 				 
+					<MatchInfo partido={this.partido}/>
+				</div>
+				<div className='col-md-4'> 				 
 				   <Equipo setGolesEquipo={(equipo) => this.setGolesEquipo(equipo)} name={this.partido.away_team_country}/>
 				</div>
 			</div>
@@ -86,14 +106,35 @@ class Partido extends React.Component {
 class Results extends React.Component {
 	constructor(props) {
 		super(props);
+		this.resultadosAcertados = props.resultadosAcertados;
 		this.misPuntos = props.misPuntos;
+		console.log(this.resultadosAcertados);
+	}
+	
+	mostrarResultado(resultado){
+		var stringResult = _.reduce(resultado, function(memo, goles, equipo) {  return memo + equipo+ ": " + goles + ' - '}, '');
+		return(
+		  <div className='form-group'>
+		    <div className='alert alert-secondary alert-success'>
+			 { stringResult.substring(0, stringResult.length - 3) }
+			</div>
+		  </div>
+		)
 	}
 	
 	render () {
+		const resultados = this.resultadosAcertados;
 		return (
-			<div className="alert alert-secondary alert-warning" role="alert">
-				Le pegue a {this.misPuntos}
-			</div>
+		   <div>
+		      <h3> Mis puntos </h3>
+			   <div className='form-group'>
+					<div className="alert alert-secondary alert-warning" role="alert">
+						Le pegue a {this.misPuntos}
+				   </div>
+			   </div>
+			   <h3> Acertados </h3>
+			   { resultados.map((resultado) => this.mostrarResultado(resultado)) }
+		  </div>	
 		)
 	}
 }
@@ -103,9 +144,9 @@ class Fixture extends React.Component {
 		super(props);
 		this.saveResult = props.saveResult;
 		this.countCompletedPartidos = 0;
-		this.realResult = props.realResult;
+		this.saveRealResult = props.saveRealResult;
 		this.compararResultados = props.compararResultados;
-		this.misPuntos = null;
+		this.resultadosAcertados = props.resultadosAcertados;
 		this.state = { mostrarResultados: false }
 	}
 	
@@ -115,7 +156,7 @@ class Fixture extends React.Component {
 	
 	createPartido(partido) {
 		const formattedPartido = utils.formattedPartido(partido);
-		this.realResult(formattedPartido);
+		this.saveRealResult(formattedPartido);
 		return(<Partido saveResult={(partido) => this.saveResultFixture(partido)} partido={partido}/> )
 	}
 	
@@ -138,7 +179,7 @@ class Fixture extends React.Component {
 				<button className='btn btn-danger btn-block' onClick={() => this.compararyMotrasResultados() }> Guardar </button>
 			  </div>
 			  <Modal show={this.state.mostrarResultados} onClose={() => this.toggleModal() }>
-				<Results misPuntos={this.misPuntos}/>
+				<Results misPuntos={this.misPuntos} resultadosAcertados={this.resultadosAcertados}/>
 			  </Modal>
 			</div>
 			)
@@ -150,18 +191,19 @@ class Prode extends React.Component {
     super(props);
 	this.results = {};
 	this.realResults = {};
+	this.acertados = [];
   }
   
   saveResult(partido) {
-	this.results = Object.assign(this.results,  partido);
+	this.results = _.extend(this.results, partido);
   }
   
   countResult() {
 	utils.countProperties(this.results);
   }
   
-  realResult(partido) {
-	this.realResults = Object.assign(this.realResults,  partido);
+  saveRealResult(partido) {
+	this.realResults = _.extend(this.realResults, partido);
   }
   
   acerteElResultadoDelPartido(currentResult, realResult) {
@@ -175,11 +217,18 @@ class Prode extends React.Component {
 	const realResults = this.realResults;
 	const currentResults = this.results;
 	const acerte = this.acerteElResultadoDelPartido;
+	var acertados = this.acertados;
+	var errados = this.errados;
+	console.log('acetados');
+	console.log(acertados);
+	
 	
 	return _.reduce(currentResults, function(memo, currentResult, resultKey) {
 		const realResult = realResults[resultKey];
-		if(acerte(currentResult, realResult))
+		if(acerte(currentResult, realResult)){
 		   memo++;
+		   acertados.push(currentResult);
+		} 
 		return memo
 	}, 0);
   }
@@ -189,8 +238,9 @@ class Prode extends React.Component {
       <div className="game">        
 		  <Fixture saveResult={(partido) => this.saveResult(partido)} 
 		  countResults= {()=> this.countResult() } 
-		  realResult= {(partido) => this.realResult(partido)}
+		  saveRealResult= {(partido) => this.saveRealResult(partido)}
 		  compararResultados = { () => this.compararResultados() }
+		  resultadosAcertados={this.acertados}
 		  / >
       </div>
     )

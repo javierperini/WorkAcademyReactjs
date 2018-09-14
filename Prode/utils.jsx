@@ -22,7 +22,7 @@ export function formattedEquipo(equipo) {
 	
 export function formattedPartido(partido) {
   var key = getKey(partido);
-  var formatedPartido = {};
+  var formatedPartido = {location: partido.location, officials: partido.officials, stage_name: partido.stage_name, datetime: Date(partido.datetime) };
   var awayTeam = formattedEquipo(partido.away_team);
   var homeTeam = formattedEquipo(partido.home_team);
   formatedPartido[key] = _.extend(awayTeam, homeTeam);
