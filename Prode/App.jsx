@@ -25,23 +25,26 @@ class Equipo extends React.Component {
 	constructor(props) {
 		super(props);
 		this.name = props.name;
+		this.flag = utils.getFlag(props.name);
 		this.setGolesEquipo = props.setGolesEquipo;
-		this.golesDelEquipo = {};
-		this.golesDelEquipo[this.name] = 0;
+		this.golesDelEquipo = {name: this.name};
 	}
 	
 	setGoles(goles) {
-		this.golesDelEquipo[this.name] = goles; 
+		_.extendOwn(this.golesDelEquipo, {goles: parseInt(goles)}); 
 		this.setGolesEquipo(this.golesDelEquipo)
 	}
 
 	render() {
+		var klass = "col-md-4 d-flex align-items-center flag " + this.flag;
 		return (
-		<div className='row'>
-		  <div className='col-md-6 d-flex align-items-center'>
-			{this.name}
-		  </div>		
-		  <div className='col-md-6 d-flex align-items-center'>
+		<div className='row d-flex align-items-center'>
+		  <div className={klass}>
+		  </div >
+          <div className="col-md-4 d-flex align-items-center">
+		  {this.name}
+          </div>  		  
+		  <div className='col-md-4 d-flex align-items-center'>
 			<Goles setGoles={(goles)=> this.setGoles(goles) }/> 
 		  </div>
 		</div>);
@@ -71,15 +74,22 @@ class Partido extends React.Component {
 		this.partido = props.partido;
 		this.key = utils.getKey(this.partido);
 		this.result = {};
-		this.result[this.key] = {};
+		this.result[this.key] = { resultado: [] };
 		this.saveResult = props.saveResult;
 	}
 	
+	getWinner(results){
+		var maximo = _.max(results, function(equipo) { return parseInt(equipo.goles)});
+		return maximo.name;
+	}
 	
 	setGolesEquipo(equipo) {
-		const result = this.result[this.key];
-		this.result[this.key] = _.extend(result, equipo);
-		if (utils.countProperties(this.result[this.key]) == 2) {
+		var currentResult = this.result[this.key];
+		currentResult.resultado.push(equipo);
+		this.result[this.key] = currentResult;
+		if (currentResult.resultado.length == 2) {
+			var winner = this.getWinner(currentResult.resultado);
+			_.extendOwn(currentResult, {winner: winner});
 			this.saveResult(this.result);
 		}	
 	}
@@ -89,7 +99,7 @@ class Partido extends React.Component {
 		 <div>			
 			 <div className='row alert alert-dark form-group'>
 				<div className='col-md-4'> 				 
-					<Equipo setGolesEquipo={(equipo) => this.setGolesEquipo(equipo)} name={this.partido.home_team_country}/>
+					<Equipo setGolesEquipo={(equipo) => this.setGolesEquipo(equipo)} name={this.partido.home_team_country} />
 				</div>
 				<div className='col-md-4'> 				 
 					<MatchInfo partido={this.partido}/>
@@ -108,15 +118,16 @@ class Results extends React.Component {
 		super(props);
 		this.resultadosAcertados = props.resultadosAcertados;
 		this.misPuntos = props.misPuntos;
-		console.log(this.resultadosAcertados);
 	}
 	
 	mostrarResultado(resultado){
-		var stringResult = _.reduce(resultado, function(memo, goles, equipo) {  return memo + equipo+ ": " + goles + ' - '}, '');
+		window.resultado = resultado;
+		var stringResult = _.reduce(resultado.resultado, function(memo, equipo) { return memo + equipo.name + ": " + equipo.goles + ' - '}, '');
 		return(
 		  <div className='form-group'>
 		    <div className='alert alert-secondary alert-success'>
-			 { stringResult.substring(0, stringResult.length - 3) }
+			 { stringResult.substring(0, stringResult.length - 3) } 
+             <span className='badge badge-secondary float-right'> Puntos {resultado.puntos}</span>	
 			</div>
 		  </div>
 		)
@@ -129,7 +140,7 @@ class Results extends React.Component {
 		      <h3> Mis puntos </h3>
 			   <div className='form-group'>
 					<div className="alert alert-secondary alert-warning" role="alert">
-						Le pegue a {this.misPuntos}
+						Mis puntos {this.misPuntos}
 				   </div>
 			   </div>
 			   <h3> Acertados </h3>
@@ -147,11 +158,12 @@ class Fixture extends React.Component {
 		this.saveRealResult = props.saveRealResult;
 		this.compararResultados = props.compararResultados;
 		this.resultadosAcertados = props.resultadosAcertados;
+		this.cleanResultados  = props.cleanResultados;
 		this.state = { mostrarResultados: false }
 	}
 	
 	saveResultFixture(partido) {
-		this.saveResult(partido)
+		this.saveResult(partido);
 	}
 	
 	createPartido(partido) {
@@ -169,6 +181,10 @@ class Fixture extends React.Component {
 		this.toggleModal();
 	}
 	
+	closeModal (){
+		this.toggleModal()
+	}
+	
 	render() {
 		return( 
 			<div className='container'>
@@ -178,7 +194,7 @@ class Fixture extends React.Component {
 			  <div className='form-group'>
 				<button className='btn btn-danger btn-block' onClick={() => this.compararyMotrasResultados() }> Guardar </button>
 			  </div>
-			  <Modal show={this.state.mostrarResultados} onClose={() => this.toggleModal() }>
+			  <Modal show={this.state.mostrarResultados} onClose={() => this.closeModal() }>
 				<Results misPuntos={this.misPuntos} resultadosAcertados={this.resultadosAcertados}/>
 			  </Modal>
 			</div>
@@ -206,28 +222,35 @@ class Prode extends React.Component {
 	this.realResults = _.extend(this.realResults, partido);
   }
   
-  acerteElResultadoDelPartido(currentResult, realResult) {
-	return _.every(currentResult, function(currentGoles, equipoKey) {
-		 var realGoles = realResult[equipoKey];
-		 return realGoles == currentGoles;
-	 });
+  acerteResultado(currentResult, realResult) {
+	return _.every(currentResult, function(currentValues, equipoKey) {
+		 var realGoles = _.find(realResult, function(equipo) { return equipo.name == currentValues.name} )
+		 return realGoles.goles == currentValues.goles;
+		});
+   }
+   
+   acerteGanador(currentResult, realResult) {
+	   return realResult.winner == currentResult.winner;
+   }
+  
+  calcularPuntos (self, currentResult, realResult) {
+	var puntajes = [{acerte: self.acerteGanador(currentResult, realResult), puntos: 1}, {acerte: self.acerteResultado(currentResult.resultado, realResult.resultado), puntos: 3}];
+	return _.reduce(puntajes, function(memo, puntaje) { return  puntaje.acerte ? memo + puntaje.puntos : memo }, 0)
+  }
+  
+  cleanResultados () {
+	 this.results = {};
+	 this.acertados = [];
   }
   
   compararResultados() {
-	const realResults = this.realResults;
-	const currentResults = this.results;
-	const acerte = this.acerteElResultadoDelPartido;
-	var acertados = this.acertados;
-	var errados = this.errados;
-	console.log('acetados');
-	console.log(acertados);
-	
-	
-	return _.reduce(currentResults, function(memo, currentResult, resultKey) {
-		const realResult = realResults[resultKey];
-		if(acerte(currentResult, realResult)){
-		   memo++;
-		   acertados.push(currentResult);
+	var self = this;
+	return _.reduce(self.results, function(memo, currentResult, resultKey) {
+		const realResult = self.realResults[resultKey];
+		var puntos = self.calcularPuntos(self, currentResult, realResult);
+		if(puntos > 0){
+		   memo+= puntos;
+		   self.acertados.push(_.extend(currentResult, { puntos: puntos }));
 		} 
 		return memo
 	}, 0);
@@ -241,6 +264,7 @@ class Prode extends React.Component {
 		  saveRealResult= {(partido) => this.saveRealResult(partido)}
 		  compararResultados = { () => this.compararResultados() }
 		  resultadosAcertados={this.acertados}
+		  cleanResultados = {() => this.cleanResultados() }
 		  / >
       </div>
     )
