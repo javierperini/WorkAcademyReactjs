@@ -8,14 +8,14 @@ class Modal extends React.Component {
       return null;
     }
 
-    var style = { display: 'block '};
+    var style = { display: 'block', 'background-color': 'rgba(0,0,0,0.3)'};
 	
     return (
 		<div style={style} className="modal fade show bd-example-modal-lg" >
 			<div className="modal-dialog modal-lg" role="document">
 				<div className="modal-content">
 				  <div className="modal-header">
-					<h5 className="modal-title" id="exampleModalLabel">Mis puntos</h5>
+					<h5 className="modal-title" id="exampleModalLabel">Puntos obtenidos</h5>
 					<button type="button" className="close" data-dismiss="modal" aria-label="Close" onClick={this.props.onClose}>
 					  <span aria-hidden="true">&times;</span>
 					</button>
