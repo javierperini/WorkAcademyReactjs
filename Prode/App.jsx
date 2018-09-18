@@ -83,9 +83,16 @@ class Partido extends React.Component {
 		return maximo.name;
 	}
 	
+	saveEquipoResult(resultados, equipoAInsertar) {
+		console.log('res');
+		console.log(resultados);
+		var currentEquipo = _.find(resultados, function(equipo) { return equipo.name == equipoAInsertar.name});
+		currentEquipo ? _.extendOwn(currentEquipo, equipoAInsertar): resultados.push(equipoAInsertar);
+	}
+	
 	setGolesEquipo(equipo) {
 		var currentResult = this.result[this.key];
-		currentResult.resultado.push(equipo);
+		this.saveEquipoResult(currentResult.resultado, equipo);
 		this.result[this.key] = currentResult;
 		if (currentResult.resultado.length == 2) {
 			var winner = this.getWinner(currentResult.resultado);
